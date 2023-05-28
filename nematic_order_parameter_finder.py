@@ -1,3 +1,6 @@
+"""
+Solution for Question 2
+"""
 import numpy as np
 import scipy.special
 import scipy.integrate
