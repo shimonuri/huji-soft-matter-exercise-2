@@ -15,35 +15,35 @@ plt.rcParams.update({"font.size": 22})
 ALPHA_TO_NORMALIZATION = {}
 
 
-def calculate_free_energies(densities, length, diameter, lamda):
+def calculate_free_energies(directory, densities, length, diameter, lamda):
     for density in densities:
-        if pathlib.Path(f"data/free_energy_{density}.csv").exists():
+        if pathlib.Path(f"{directory}/free_energy_{density}.csv").exists():
             logging.info(f"Skipping density = {density}")
             continue
 
         logging.info(f"Calculating free energy for density = {density}")
         free_energy = get_free_energy_to_alpha(density, length, diameter, lamda)
-        alphas = np.linspace(0, 20, 20)
+        alphas = np.linspace(0, 200, 50)
         free_energies = []
         for alpha in alphas:
             free_energies.append(free_energy(alpha))
             # save to csv
         df = pandas.DataFrame({"alpha": alphas, "free_energy": free_energies})
-        df.to_csv(f"data/free_energy_{density}.csv", index=False)
+        df.to_csv(f"{directory}/free_energy_{density}.csv", index=False)
+        del df
         logging.info(f"Finished calculating free energy for density = {density}")
 
 
-def plot_free_energies():
-    for file in pathlib.Path("data").glob("*.csv"):
+def plot_free_energies(directory):
+    for file in pathlib.Path(directory).glob("*.csv"):
         df = pandas.read_csv(file)
-        density = re.search(r"\d+", file.stem).group()
-        plt.plot(df["alpha"], df["free_energy"], label=f"density = {density}")
+        density = float(re.search(r"\d+\.\d+", file.name).group(0))
+        plt.plot(df["alpha"], df["free_energy"], label=f"density = {density:.2f}")
 
     plt.xlabel("$\\alpha$")
     plt.ylabel("$\\mathcal{F}(\\alpha)$")
     plt.legend()
     plt.show()
-
 
 def get_unit_vector(theta, phi):
     return np.array(
@@ -110,5 +110,5 @@ def get_angular_distribution(alpha):
 
 
 if __name__ == "__main__":
-    calculate_free_energies(np.linspace(0, 5, 10), 1, 0.1, 1)
-    plot_free_energies()
+    calculate_free_energies('data', np.linspace(0, 50, 2), 1, 1, 1)
+    plot_free_energies("data")
