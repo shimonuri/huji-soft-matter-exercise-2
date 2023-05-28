@@ -4,24 +4,43 @@ Solution for Question 4
 import numpy as np
 import scipy.integrate
 import matplotlib.pyplot as plt
+import pandas
+import pathlib
+import re
+import logging
 
+logging.basicConfig(level=logging.INFO)
 plt.rcParams.update({"font.size": 22})
 
 ALPHA_TO_NORMALIZATION = {}
 
 
-def plot_free_energy(densities, length, diameter, lamda):
+def calculate_free_energies(densities, length, diameter, lamda):
     for density in densities:
+        if pathlib.Path(f"data/free_energy_{density}.csv").exists():
+            logging.info(f"Skipping density = {density}")
+            continue
+
+        logging.info(f"Calculating free energy for density = {density}")
         free_energy = get_free_energy_to_alpha(density, length, diameter, lamda)
-        alphas = np.linspace(0, 20, 100)
+        alphas = np.linspace(0, 20, 20)
         free_energies = []
         for alpha in alphas:
             free_energies.append(free_energy(alpha))
-        plt.scatter(
-            alphas,
-            [free_energy(alpha) for alpha in alphas],
-            label=f"Density = {density}",
-        )
+            # save to csv
+        df = pandas.DataFrame({"alpha": alphas, "free_energy": free_energies})
+        df.to_csv(f"data/free_energy_{density}.csv", index=False)
+        logging.info(f"Finished calculating free energy for density = {density}")
+
+
+def plot_free_energies():
+    for file in pathlib.Path("data").glob("*.csv"):
+        df = pandas.read_csv(file)
+        density = re.search(r"\d+", file.stem).group()
+        plt.plot(df["alpha"], df["free_energy"], label=f"density = {density}")
+
+    plt.xlabel("$\\alpha$")
+    plt.ylabel("$\\mathcal{F}(\\alpha)$")
     plt.legend()
     plt.show()
 
@@ -91,4 +110,5 @@ def get_angular_distribution(alpha):
 
 
 if __name__ == "__main__":
-    plot_free_energy([0, 1, 2, 3, 50], 1, 0.1, 1)
+    calculate_free_energies(np.linspace(0, 5, 10), 1, 0.1, 1)
+    plot_free_energies()
